@@ -1,6 +1,6 @@
 # 1.简介
 Protobuf是Protocol Buffers的简称，它是Google公司开发的一种数据描述语言，用于序列化结构化数据 - 类似XML，但更小，更快，更简单。 您可以定义数据的结构化结构，然后使用特殊生成的源代码轻松地将结构化数据写入和读取各种数据流，并使用各种语言。可以作为RPC的基础工具
-#2.定义一个Message类型
+# 2.定义一个Message类型
 ```
 /* SearchRequest represents a search query, with pagination options to
  * indicate which results to include in the response. */
@@ -28,7 +28,7 @@ message Foo {
 
 对于go，产生一个.pb.go文件
 
-#3.标量类型
+# 3.标量类型
 ```
 .proto type ====> GO type
 double            float64
@@ -50,7 +50,7 @@ bytes             []byte
 - message字段未设置时，确切的值依赖语言环境。
 - repeated 字段的默认值为空
 
-#5.Enumerations
+# 5.Enumerations
 ```
 message SearchRequest {
   string query = 1;
@@ -79,7 +79,7 @@ enum EnumAllowingAlias {
   RUNNING = 1;
 }
 ```
-#6.使用其他message类型
+# 6.使用其他message类型
 可以使用其他message 类型作为字段类型。例如，Result 作为SearchResponse的字段。
 
 ```
@@ -99,7 +99,7 @@ message Result {
 import "myproject/other_protos.proto";
 ```
 
-#7.嵌套类型
+# 7.嵌套类型
 ```
 message SearchResponse {
     message Result {
