@@ -1,9 +1,13 @@
-#1.简介
+# 1.简介
+
  在gRPC中，客户端应用程序可以直接调用不同计算机上的服务器应用程序上的方法，就像它是本地对象一样，使您可以更轻松地创建分布式应用程序和服务。与许多RPC系统一样，gRPC基于定义服务的思想，指定可以使用其参数和返回类型远程调用的方法。在服务器端，服务器实现此接口并运行gRPC服务器来处理客户端调用。在客户端，客户端有一个存根（在某些语言中称为客户端），它提供与服务器相同的方法。gRPC可以使用protocol buffers作为其接口定义语言（IDL）和其基础消息交换格式,来序列化结构化数据,关于详细的Proto语法介绍，可以看一下另一篇文章[https://www.jianshu.com/p/434ac0fbcf59](https://www.jianshu.com/p/434ac0fbcf59)
 
 
 ![图片来自gRPC doc.png](https://upload-images.jianshu.io/upload_images/3004516-e6b52b9c7f39d69d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
-#2.基本概念
+
+
+# 2.基本概念
+
 ## 2.1.服务定义
 与许多RPC系统一样，gRPC基于定义服务的思想，指定可以使用其参数和返回类型远程调用的方法。 默认情况下，gRPC使用protocol buffers作为接口定义语言（IDL）来描述服务接口和有效负载消息的结构。 如果需要，可以使用其他替代方案。
 ```
