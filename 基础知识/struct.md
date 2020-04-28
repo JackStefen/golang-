@@ -7,7 +7,7 @@ type Person struct {
     Birthday time.Time
 }
 ```
-结构体字段的首字母标识字段的权限访问，大写的包外可访问，小写的属于保内私有变量，仅在该结构体内容使用
+结构体字段的首字母标识字段的权限访问，大写的包外可访问，小写的属于包内私有变量，仅在该结构体内部使用
 # 2. 初始化
 ```
     ts := "2000-01-01 12:00:32"
@@ -16,7 +16,8 @@ type Person struct {
     theTime, _ := time.ParseInLocation(timeLayout, ts, loc) //使用模板在对应时区转化为time.time类型
     fmt.Println(theTime)
     p := Person{Name:"zhanglinpeng",Age: 18, Birthday: theTime,} //最后的,不能少
-    p2 := new(Persion) //new() 函数来创建一个「零值」结构体，所有的字段都被初始化为相应类型的零值。返回的是结构体指针
+    p2 := new(Persion) //new()函数来创建一个「零值」结构体，所有的字段都被初始化为相应类型的零值。返回的是结构体指针
+    zerostruct := struct{}{} //空结构体,字节长度为0
 ```
 # 3.匿名结构体
 ```
@@ -37,9 +38,9 @@ var Student struct {
 }
 a := Student{"zhaoll", 19}
 ```
-注意顺序不能变
+注意初始化时的顺序不能变
 
-# 5嵌套
+# 5.嵌套
 ```
 type Person struct {
     Name string
@@ -65,7 +66,7 @@ var apr = struct {
     apr.Contact.Email = "110@qq.com"
     fmt.Println(apr)
 ```
-# 6. 值传递
+# 6.值传递
 结构体作为参数传递给函数时，也是值传递，如果想修改原始结构体，可以使用指针
 ```
 
@@ -144,7 +145,84 @@ func (b B) print(i int) {
 }
 ```
 针对A, B不同结构体print是不同的方法，所以可以和平相处，但是针对B结构体，存在两个同名的print方法，那么就会报错。
-# 11.接受者的类型决定了能否修改绑定的结构体
+# 11.结构体指针
+```
+package main
+
+import (
+    "fmt"
+)
+
+type User struct {
+    Id   int
+    Name string
+}
+
+func (u User) displayId() {
+    fmt.Println(u.Id)
+}
+
+func (u *User) displayName() {
+    fmt.Println(u.Name)
+}
+
+func main() {
+    us := User{Id: 1, Name: "zhao"}
+    us.displayId() // 1
+    us.displayName() // zhao
+    us2 := &User{Id: 2, Name: "qian"}
+    us2.displayId() // 2
+    us2.displayName() // qian
+}
+```
+可以看出，无论是结构体变量还是结构体指针变量，都是可以调用接受者不管是结构体还是结构体指针的方法。但是，传递给接口的时候会有所不同
+```
+package main
+
+import (
+    "fmt"
+)
+
+type DisplayInfo interface {
+    displayId()
+    displayName()
+}
+
+type User struct {
+    Id   int
+    Name string
+}
+
+func (u User) displayId() {
+    fmt.Println(u.Id)
+}
+
+func (u *User) displayName() {
+    fmt.Println(u.Name)
+}
+
+
+func DisplayUserInfo(ds DisplayInfo) {
+    ds.displayId()
+    ds.displayName()
+}
+
+func main() {
+    us := User{Id: 1, Name: "zhao"}
+    us.displayId()
+    us.displayName()
+    us2 := &User{Id: 2, Name: "qian"}
+    us2.displayId()
+    us2.displayName()
+
+    us3 :=User{Id:3,Name:"sun"} // 如果这里使用&User{Id:3,Name:"sun"}是可以运行的
+    DisplayUserInfo(us3) // cannot use us3 (type User) as type DisplayInfo in argument to DisplayUserInfo
+    // User does not implement DisplayInfo (displayName method has pointer receiver)
+
+}
+```
+错误信息中说，User类型没有实现DisplayInfo接口原因是displayName方法接受者是指针。但是为什么`us3=&User{Id:3,Name:"sun"}`可以呢？这是因为**接受者是指针类型的时候，说明指针指向的结构体实现了接口 接受者是值类型的时候，说明的是结构体本身实现了接口**.接受者是T的属于一个方法集，接受者是\*T的是另一个方法集，该方法及包含接受者是*T和T的。
+# 12.接受者的类型决定了能否修改绑定的结构体
 ```
 package main
 
@@ -169,7 +247,7 @@ func (b *B) print() {
 func main() {
     a := A{}
     a.print()
-    fmt.Println(a.Name)  //""
+    fmt.Println(a.Name)  // ""
     b := B{}
     b.print()
     fmt.Println(b.Name) // "FuncB"
@@ -195,126 +273,33 @@ func (a *A) print() {
 
 func main() {
     a := A{}
-    a.print()
-    fmt.Println(a.Name)  //"FuncA"
-    (*A).print(&a)
+    a.print() // method value
+    (*A).print(&a)  // method expression
+    (&a).print()
 }
 ```
 # 15.方法权限
 最后说下访问权限，因为Go是以大小写来区分是公有还是私有，**但都是针对包级别的**，
 所以在包内所有的都能访问，而方法绑定本身只能绑定包内的类型，所以方法可以访问接收者所有成员。
 
-# 16.一个有趣的例子
+# 16.demo
 ```
 package main
 
 import (
     "fmt"
+    "unsafe"
 )
 
 type User struct {
-    subject [100]byte
+    subject [10]byte
 }
 
 func main() {
-    var a [3]int
-    fmt.Println(a)
     user := new(User)
-    fmt.Println(user.subject)
-    fmt.Println(len(user.subject))
-    fmt.Println(reflect.TypeOf(user))
+    fmt.Println(user.subject) // [0 0 0 0 0 0 0 0 0 0]
+    fmt.Println(len(user.subject)) // 10
+    fmt.Println(reflect.TypeOf(user)) // *main.User
+    fmt.Println(unsafe.Sizeof(struct{}{})) // 0
 }
 ```
-Output:
-```
-[0 0 0]
-[0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-100
-*main.User
-```
-可以看出，作为结构体的一个字段，new结构体的时候，会同时初始化其字段为相应类型的零值，然后返回其结构体指针
-
-# json tag
-```
-package main
-
-import (
-     "fmt"
-     "encoding/json"
-)
-
-type UserInfo struct {
-	UsrId int64      `json:"user_id,omitempty"`
-	NickName string  `json:"nickname"`
-	Address string   `json:"-" `
-}
-
-func main () {
-    var u UserInfo = UserInfo{
-    	NickName: "zhanglinpeng",
-    	Address: "",
-    }
-    rl, err:= json.Marshal(u)
-    if err != nil {
-    	fmt.Println("json marshal error: ", err)
-    }
-    // os.Stdout.Write(rl)
-    fmt.Println(string(rl))
-    var vlr UserInfo
-    err1 := json.Unmarshal(rl, &vlr)
-    if err != nil {
-    	fmt.Println("json unmarshal error: ", err1)
-    }
-    fmt.Printf("%v\n", vlr)
-}
-```
-Output:
-```
-{"nickname":"zhanglinpeng"}
-{0 zhanglinpeng }
-```
-注意事项，**在标签中`json:"nickname"` 外层符号为键盘Tab健上方的键。json冒号和后面的字符串之间不能有空格, omitempty和逗号之间也不能有空格，总之在标签中能不用空格就不用空格。**
-- UsrId字段没有显示的原因是，我们在实例化结构体的时候未实例化UsrId字段，那么json结果输出中就没有这个字段，但是实际上，他的默认值是0，是存在的，这也是为什么在最后的转化回去的输出结果中该字段的值为0.
-- Address字段无论设置与否，结构都不会显示，因为标签设置为了`-`。
-
-我们在`-`字符的后面加了一个逗号。结果就会输出Address字段，字段名为"-"
-
-```
-package main
-
-import (
-     "fmt"
-     "encoding/json"
-)
-
-type UserInfo struct {
-	UsrId int64      `json:",omitempty"`
-	NickName string  `json:"nickname"`
-	Address string   `json:"-," `
-}
-
-func main () {
-    var u UserInfo = UserInfo{
-    	NickName: "zhanglinpeng",
-    	Address: "",
-    }
-    rl, err:= json.Marshal(u)
-    if err != nil {
-    	fmt.Println("json marshal error: ", err)
-    }
-    // os.Stdout.Write(rl)
-    fmt.Println(string(rl))
-    var vlr UserInfo
-    err1 := json.Unmarshal(rl, &vlr)
-    if err != nil {
-    	fmt.Println("json unmarshal error: ", err1)
-    }
-    fmt.Printf("%v\n", vlr)
-}
-```
-Output:
-```
-{"nickname":"zhanglinpeng","-":"shanghai"}
-{0 zhanglinpeng shanghai}
-```
-如果在结构体实例化中没有实例化字段就会跳过，注意omitempty前面有逗号。
