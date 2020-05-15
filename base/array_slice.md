@@ -69,7 +69,7 @@ func main(){
 具体可以看`runtime`包中的`slice`结构体
 ```
 type slice struct {
-    array unsafe.Pointer
+    array unsafe.Pointer 
     len   int
     cap   int
 }
@@ -110,7 +110,7 @@ func main() {
 }
 ```
 
-可以看出对数组切片元素等修改，影响到所有产生于原切片中共同位置等元素的值。但是，如果因为超出切片容量，而重新分配了内存大小，那么，重新分配后的遍历是不会受到影响的。
+可以看出对数组切片元素的修改，影响到所有产生于原切片中共同位置等元素的值。但是，如果因为超出切片容量，而重新分配了内存大小，那么，重新分配后的遍历是不会受到影响的。
 ```
 package main
 
@@ -128,6 +128,60 @@ func main() {
     fmt.Println(b, c) //[9 4 5] [2 3 1 2 3 4 5 5]
 }
 ```
+**当使用slice作为参数进行传递时，发生了一次值copy,在函数中，对传入的参数的修改，都不会影响到调用者函数中的源slice中的值**
+请看一下下面的例子
+```
+package main
+
+
+import (
+	"fmt"
+)
+
+func main() {
+
+
+	var a = []int{1,2,3,4}
+	funcA(a)
+	c := make([]int, 0)
+	funcA(c)
+	d := make([]int, 0, 5)
+	funcA(d)
+	fmt.Println(a)
+	fmt.Println(c)
+	fmt.Println(d)
+}
+
+
+func funcA(b []int) {
+	b = append(b, 4, 5, 6, 7, 8, 9, 10)
+}
+
+```
+**但是map作为参数进行传递的时候，就不一样了，函数中对map的修改，都会影响到，传入的参数的原始map**
+```
+package main
+
+
+import (
+	"fmt"
+)
+
+func main() {
+	var a map[int]int = map[int]int{
+		1: 1,
+		2:2,
+	}
+
+	funcA(a)
+	fmt.Println(a)
+}
+
+func funcA(b map[int]int) {
+	b[1] = 190
+}
+```
+
 # 题外话
 - make用于内建类型（map、slice 和channel）的内存分配。
 - new用于各种类型的内存分配。
@@ -249,20 +303,15 @@ func makeslice(et *_type, len, cap int) unsafe.Pointer {
     return mallocgc(mem, et, true)
 }
 ```
-实际调用的是`mallocgc(mem, et, true)`来进行资源分配,
-当append(a, 1)一个新值到切片中时，会进行一个`runtime.growslice`的动作，这个是因为我们在创建切片时，使用的默认值填充元素，切片长度为10，当在append时，需要增加切片容量
+实际调用的是`mallocgc(mem, et, true)`来进行资源分配,当分配的资源使用完之后，如果再进行append操作的话，比如
+当append(a, 1)一个新值到切片中时，将会首先进行一次`runtime.growslice`的动作，进行扩容，然后再进行对新的slice的append操作
 
 ```
-// growslice handles slice growth during append.
-// It is passed the slice element type, the old slice, and the desired new minimum capacity,
-// and it returns a new slice with at least that capacity, with the old data
-// copied into it.
-// The new slice's length is set to the old slice's length,
-// NOT to the new requested capacity.
-// This is for codegen convenience. The old slice's length is used immediately
-// to calculate where to write new values during an append.
-// TODO: When the old backend is gone, reconsider this decision.
-// The SSA backend might prefer the new length or to return only ptr/cap and save stack space.
+// growslice 处理slice append操作时的扩容。
+// 该函数传入的参数为元素类型，老的slice，和渴望的新的容量最小值
+// 返回一个新的slice，容量大小至少为传入的cap大小，老的slice数据将copy到新的slice中。
+// 新的slice长度设置为老的slice长度，而不是新设的容量大小值
+// 这是为了方便代码生成。老的slice长度用于计算在append操作写入新的值时的位置 
 func growslice(et *_type, old slice, cap int) slice {
     if raceenabled {
         callerpc := getcallerpc()
