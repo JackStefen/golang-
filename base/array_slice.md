@@ -181,7 +181,83 @@ func funcA(b map[int]int) {
 	b[1] = 190
 }
 ```
+*再看一段比较卧槽无情的代码，是不是有点怀疑人生*
+```
+package main
 
+
+import (
+	"fmt"
+)
+
+func main() {
+
+
+	var a = []int{1,2,3,4}
+	funcA(a)
+	c := make([]int, 0)
+	funcA(c)
+	d := make([]int, 0, 5)
+	funcA(d)
+	fmt.Println(a)
+	fmt.Println(c)
+	fmt.Println(d)
+	funcB(a)
+	fmt.Println(a)
+}
+
+
+func funcA(b []int) {
+	b = append(b, 4, 5, 6, 7, 8, 9, 10)
+}
+
+// for循环修改slice的值,此时把slice a中的数据都加1了，执行过该函数后，slice a中的值将会变化
+func funcB(b []int) {
+	for i, v:= range b {
+		b[i] = v + 1
+	}
+}
+```
+*再看看和下面的例子的区别*
+```
+package main
+
+
+import (
+	"fmt"
+)
+
+func main() {
+
+
+	var a = []int{1,2,3,4}
+	// funcA(a)
+	// c := make([]int, 0)
+	// funcA(c)
+	// d := make([]int, 0, 5)
+	// funcA(d)
+	// fmt.Println(a)
+	// fmt.Println(c)
+	// fmt.Println(d)
+	funcB(a)
+	fmt.Println(a)
+}
+
+
+// func funcA(b []int) {
+// 	b = append(b, 4, 5, 6, 7, 8, 9, 10)
+// }
+
+
+
+//该循环修改参数slice的函数，在遍历过程中，生成的value其实是指的copy,此时单纯的修改该值是无法影响到原始slice中的数据的
+func funcB(b []int) {
+	for _, v:= range b {
+		fmt.Println(&v) // 该值输出一直是一样的
+		v += 1
+	}
+}
+```
 # 题外话
 - make用于内建类型（map、slice 和channel）的内存分配。
 - new用于各种类型的内存分配。
