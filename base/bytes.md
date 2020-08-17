@@ -111,3 +111,74 @@ func TestCopy(t *testing.T) {
 }
 
 ```
+
+
+看上面的基本语法估计是没什么感觉，接下来就看看实际使用中，是如何使用该代码包的，参考一下`go-elasticsearch`中的关于该代码包的使用
+
+```
+// Response represents the API response.
+//
+type Response struct {
+	StatusCode int
+	Header     http.Header
+	Body       io.ReadCloser
+}
+
+// String returns the response as a string.
+//
+// The intended usage is for testing or debugging only.
+//
+func (r *Response) String() string {
+	var (
+		out = new(bytes.Buffer)
+		b1  = bytes.NewBuffer([]byte{})
+		b2  = bytes.NewBuffer([]byte{})
+		tr  io.Reader
+	)
+
+	if r != nil && r.Body != nil {
+		tr = io.TeeReader(r.Body, b1)
+		defer r.Body.Close()
+
+		if _, err := io.Copy(b2, tr); err != nil {
+			out.WriteString(fmt.Sprintf("<error reading response body: %v>", err))
+			return out.String()
+		}
+		defer func() { r.Body = ioutil.NopCloser(b1) }()
+	}
+
+	if r != nil {
+		out.WriteString(fmt.Sprintf("[%d %s]", r.StatusCode, http.StatusText(r.StatusCode)))
+		if r.StatusCode > 0 {
+			out.WriteRune(' ')
+		}
+	} else {
+		out.WriteString("[0 <nil>]")
+	}
+
+	if r != nil && r.Body != nil {
+		out.ReadFrom(b2) // errcheck exclude (*bytes.Buffer).ReadFrom
+	}
+
+	return out.String()
+}
+
+```
+
+该方法仅用于测试和调试，打印出返回结构体，这里一个比较有意思的是，使用了io包中的TeeReader.我们额外看看这个函数是干啥的
+
+```
+// TeeReader returns a Reader that writes to w what it reads from r.
+// All reads from r performed through it are matched with
+// corresponding writes to w. There is no internal buffering -
+// the write must complete before the read completes.
+// Any error encountered while writing is reported as a read error.
+func TeeReader(r Reader, w Writer) Reader {
+	return &teeReader{r, w}
+}
+
+```
+返回一个`Reader`,这个`Reader`会将从`r`中读取到的内容写到`w`。
+
+
+感觉这个示例还是不错的，将相关的内容都用到了，让我们有了一个很直观的使用体验，大家可以在自己的实现上，应用这些工具，当然了，要合理的使用哦，不能为了用而用。
