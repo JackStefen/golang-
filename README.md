@@ -13,6 +13,6 @@
 - [反射](https://github.com/ZJWOpen/golang-notes/blob/master/b基础知识/reflect.md)
 - [unsafe包](https://github.com/ZJWOpen/golang-notes/blob/master/b基础知识/unsafe.md)
 - [文件读取操作](https://github.com/ZJWOpen/golang-notes/blob/master/b基础知识/readfile.md)
-- [sync包的应用分析](https://github.com/ZJWOpen/golang-notes/blob/master/b基础知识/sync_package.md)
+- [sync包的应用分析](https://github.com/ZJWOpen/golang-notes/blob/master/b基础知识/sync.md)
 - [net/http解析](https://github.com/ZJWOpen/golang-notes/blob/master/b基础知识/http.md)
 - [websocket](https://github.com/ZJWOpen/golang-notes/blob/master/b基础知识/websocket.md)
